@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mock Interview</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<nav class="navbar">
+<h1 class="logo">Hirable<span>AI</span></h1>
+<button class="secondary-btn" onclick="logout()">Exit</button>
+</nav>
+
+<section class="center-page">
+
+<div class="card mock-card">
+
+<!-- TOP BAR -->
+<div class="mock-top">
+<span id="progress">Question 1/5</span>
+<span id="timer">00:00</span>
+</div>
+
+<!-- QUESTION -->
+<h2 id="questionText">
+Tell me about yourself
+</h2>
+
+<!-- ANSWER -->
+<textarea id="answer" placeholder="Type your answer..."></textarea>
+
+<!-- CONTROLS -->
+<div class="mock-controls">
+<!-- <button class="secondary-btn" onclick="skipQ()">Skip</button> -->
+<button class="primary-btn" onclick="nextQ()">Next</button>
+</div>
+
+<button class="end-btn" onclick="endInterview()">
+End Interview
+</button>
+
+</div>
+
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>
