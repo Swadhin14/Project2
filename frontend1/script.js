@@ -98,7 +98,7 @@ document.addEventListener("DOMContentLoaded", async function() {
          qText.innerText = "Generating custom interview questions...";
          progress.innerText = "Please wait";
          
-         let rText = localStorage.getItem("resume_text") || "Experienced Software Engineer";
+         let rFile = localStorage.getItem("resume_filename") || "";
          // Clear previous evaluations
          localStorage.setItem("evals", "[]");
          
@@ -106,7 +106,7 @@ document.addEventListener("DOMContentLoaded", async function() {
            let res = await fetch("/api/interview/generate", {
              method: "POST",
              headers: { "Content-Type": "application/json" },
-             body: JSON.stringify({ resume_text: rText })
+             body: JSON.stringify({ filename: rFile })
            });
            let data = await res.json();
            questions = data.questions;
@@ -138,6 +138,7 @@ async function nextQ() {
   let answerBox = document.getElementById("answer");
   let ansText = answerBox ? answerBox.value : "";
   let currentQ = questions[index];
+  let rFile = localStorage.getItem("resume_filename") || "";
   
   let nextBtn = document.querySelector(".mock-controls .primary-btn");
   if (nextBtn) nextBtn.disabled = true;
@@ -146,7 +147,7 @@ async function nextQ() {
      let res = await fetch("/api/interview/evaluate", {
          method: "POST",
          headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ question: currentQ, answer: ansText })
+         body: JSON.stringify({ filename: rFile, question: currentQ, answer: ansText })
      });
      let edata = await res.json();
      let currentEvals = JSON.parse(localStorage.getItem("evals") || "[]");

@@ -3,6 +3,8 @@ import os
 import uuid
 from app.services.pdf_parser import extract_text_from_pdf
 from app.services.chunks import chunk_resume_text
+from app.services.vector_store import index_chunks
+
 router = APIRouter()
 
 UPLOAD_DIR = "uploads"
@@ -30,9 +32,12 @@ async def upload_resume(file: UploadFile = File(...)):
     print(extracted_text[:300])
     
    
-    chunks = chunk_resume_text(extracted_text,unique_filename)
+    chunks = chunk_resume_text(extracted_text, unique_filename)
     print("TOTAL CHUNKS:", len(chunks))
     print("FIRST CHUNK:", chunks[0] if chunks else "No chunks")
+    
+    # Index chunks in vector store
+    index_chunks(unique_filename, chunks)
     
     return {
         "success": True,

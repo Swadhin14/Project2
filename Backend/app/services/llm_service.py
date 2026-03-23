@@ -35,15 +35,15 @@ def call_ollama(prompt: str) -> str:
         print(f"Ollama connection error: {e}")
         return ""
 
-def generate_questions(resume_text: str, num_questions: int = 5):
+def generate_questions(context: str, num_questions: int = 5):
     prompt = f"""
-    You are an expert technical interviewer. Based on the following resume, generate {num_questions} 
+    You are an expert technical interviewer. Based on the following extracted resume chunks, generate {num_questions} 
     relevant interview questions to assess the candidate's skills and experience.
     Return STRICTLY a JSON object with a single key "questions" mapping to an array of strings.
     Format: {{"questions": ["Q1", "Q2", "Q3"]}}
     
-    Resume content:
-    {resume_text[:3000]}
+    Resume chunks context:
+    {context}
     """
     
     response_text = call_ollama(prompt)
@@ -72,9 +72,13 @@ def generate_questions(resume_text: str, num_questions: int = 5):
        "Do you have any questions for us?"
     ]
 
-def evaluate_answer(question: str, answer: str):
+def evaluate_answer(question: str, answer: str, context: str):
     prompt = f"""
-    You are an AI interviewer evaluating a candidate's answer.
+    You are an AI interviewer evaluating a candidate's answer based on their resume context.
+    
+    Context from resume:
+    {context}
+    
     Question: {question}
     Candidate's Answer: {answer}
     
