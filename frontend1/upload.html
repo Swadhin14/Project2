@@ -5,19 +5,26 @@
 <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="center-page">
+<body style="position: relative;">
 
+<nav class="navbar" style="position: relative; z-index: 10;">
+<h1 class="logo">Hirable<span>AI</span></h1>
+<button class="secondary-btn" onclick="logout()">Logout</button>
+</nav>
+
+<section class="center-page">
 <div class="card">
   <h2>Upload Resume</h2>
 
   <input type="file" id="resume" accept=".pdf">
-  <button type="button" onclick="upload()">Upload</button>
+  <button type="button" class="secondary-btn" onclick="upload()" style="margin-bottom: 20px; width: 100%;">Upload</button>
   <p id="msg"></p>
 
-  <button id="nextBtn" class="primary-btn" disabled onclick="goMock()">
+  <button id="nextBtn" class="primary-btn" disabled onclick="goMock()" style="width: 100%;">
    <h4> Continue to Interview</h4>
   </button>
 </div>
+</section>
 
 <script src="script.js"></script>
 </body>

@@ -111,29 +111,36 @@ document.addEventListener("DOMContentLoaded", async function() {
            let data = await res.json();
            questions = data.questions;
            updateQ();
+           startTimer();
          } catch(e) {
            console.error("Failed to generate questions:", e);
            questions = ["Tell me about yourself", "What are your strengths?", "Any questions for us?"];
            updateQ();
+           startTimer();
          }
      }
   }
 });
 
 /* TIMER - run only if timer element exists */
-const timerEl = document.getElementById("timer");
-if (timerEl) {
-  let seconds = 0;
-  setInterval(() => {
-    seconds++;
-    let m = Math.floor(seconds / 60);
-    let s = seconds % 60;
-    timerEl.innerText =
-      `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  }, 1000);
+let timerInterval;
+function startTimer() {
+  const timerEl = document.getElementById("timer");
+  if (timerEl && !timerInterval) {
+    let seconds = 0;
+    timerInterval = setInterval(() => {
+      seconds++;
+      let m = Math.floor(seconds / 60);
+      let s = seconds % 60;
+      timerEl.innerText =
+        `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }, 1000);
+  }
 }
 
 /* NEXT */
+let evalPromises = [];
+
 async function nextQ() {
   let answerBox = document.getElementById("answer");
   let ansText = answerBox ? answerBox.value : "";
@@ -141,28 +148,38 @@ async function nextQ() {
   let rFile = localStorage.getItem("resume_filename") || "";
   
   let nextBtn = document.querySelector(".mock-controls .primary-btn");
-  if (nextBtn) nextBtn.disabled = true;
+  
+  const evaluateAnswer = async () => {
+    try {
+       let res = await fetch("/api/interview/evaluate", {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify({ filename: rFile, question: currentQ, answer: ansText })
+       });
+       let edata = await res.json();
+       edata.question = currentQ;
+       edata.user_answer = ansText;
+       let currentEvals = JSON.parse(localStorage.getItem("evals") || "[]");
+       currentEvals.push(edata);
+       localStorage.setItem("evals", JSON.stringify(currentEvals));
+    } catch(e) {
+       console.error("Evaluation failed", e);
+    }
+  };
 
-  try {
-     let res = await fetch("/api/interview/evaluate", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ filename: rFile, question: currentQ, answer: ansText })
-     });
-     let edata = await res.json();
-     let currentEvals = JSON.parse(localStorage.getItem("evals") || "[]");
-     currentEvals.push(edata);
-     localStorage.setItem("evals", JSON.stringify(currentEvals));
-  } catch(e) {
-     console.error("Evaluation failed", e);
-  }
+  let p = evaluateAnswer();
+  evalPromises.push(p);
 
-  if (nextBtn) nextBtn.disabled = false;
   index++;
 
   if (index < questions.length) {
     updateQ();
   } else {
+    if (nextBtn) {
+        nextBtn.disabled = true;
+        nextBtn.innerText = "Finalizing Results...";
+    }
+    await Promise.all(evalPromises);
     window.location = "results.html";
   }
 }
@@ -233,11 +250,60 @@ window.onload = function () {
          let avg = Math.round((conf + comm + tech) / 3);
          overallScore.innerText = avg + "%";
          
-         // Display recent feedback
+         // Display complete detailed feedback
          let feedbackBox = document.querySelector(".feedback p");
-         if (feedbackBox && len > 0) {
-             feedbackBox.innerText = storedEvals[len - 1].feedback || "Great attempt. Focus on clarity and concise technical details.";
+         if (feedbackBox) {
+             feedbackBox.innerText = "Here is a detailed breakdown of your performance across all questions.";
+         }
+         
+         let completeFeedbackContainer = document.getElementById("completeFeedback");
+         if (completeFeedbackContainer && len > 0) {
+             completeFeedbackContainer.innerHTML = ""; // Clear existing
+             storedEvals.forEach((e, idx) => {
+                 let itemDiv = document.createElement("div");
+                 itemDiv.className = "feedback-detail-item";
+                 itemDiv.style.marginBottom = "20px";
+                 itemDiv.style.padding = "15px";
+                 itemDiv.style.background = "rgba(255, 255, 255, 0.05)";
+                 itemDiv.style.borderRadius = "8px";
+                 
+                 itemDiv.innerHTML = `
+                     <h4 style="margin-top:0;">Question ${idx + 1}: ${e.question}</h4>
+                     <p><strong>Your Answer:</strong> ${e.user_answer || "(No answer provided)"}</p>
+                     <p><strong>Feedback:</strong> <span style="color: #ffcc00">${e.feedback || "Good effort."}</span></p>
+                     <p><strong>Ideal Answer:</strong> <span style="color: #00fa9a">${e.ideal_answer || "N/A"}</span></p>
+                 `;
+                 completeFeedbackContainer.appendChild(itemDiv);
+             });
          }
      }
+  }
+
+  /* DASHBOARD POPULATE */
+  let dashInterviews = document.getElementById("dashInterviews");
+  if (dashInterviews) {
+      let storedEvals = JSON.parse(localStorage.getItem("evals") || "[]");
+      dashInterviews.innerText = storedEvals.length;
+      
+      let dashScore = document.getElementById("dashScore");
+      let total = 0;
+      storedEvals.forEach(e => {
+          let score = Math.round(((e.confidence || 70) + (e.communication || 70) + (e.technical || 70)) / 3);
+          total += score;
+      });
+      let avg = storedEvals.length > 0 ? Math.round(total / storedEvals.length) : 0;
+      dashScore.innerText = avg + "%";
+      
+      let dashResume = document.getElementById("dashResume");
+      let rName = localStorage.getItem("resume_filename");
+      if (rName) {
+          // cleanly format the ugly UUID off the resume filename if present
+          dashResume.innerText = rName.includes("_") ? rName.split("_").slice(1).join("_").substring(0, 20) + "..." : rName.substring(0, 20) + "...";
+      }
+      
+      let dashFeedback = document.getElementById("dashFeedback");
+      if (storedEvals.length > 0) {
+          dashFeedback.innerText = storedEvals[storedEvals.length - 1].feedback;
+      }
   }
 }

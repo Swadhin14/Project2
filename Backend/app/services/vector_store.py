@@ -1,16 +1,21 @@
 import os
-from sentence_transformers import SentenceTransformer
 import numpy as np
 
 # Global in-memory store: filename -> list of chunks with their embeddings
 # Structure: { "filename.pdf": [ {"chunk_id": 1, "text": "...", "embedding": np.array(...) }, ... ] }
 VECTOR_STORE = {}
 
-# Load the embedding model (all-MiniLM-L6-v2 is fast and lightweight)
-# This will download the model on the first run, taking ~80MB.
-print("Loading embedding model...")
-model = SentenceTransformer("all-MiniLM-L6-v2")
-print("Embedding model loaded.")
+# Lazy load model
+_model = None
+
+def get_model():
+    global _model
+    if _model is None:
+        print("Loading embedding model (lazy load)...")
+        from sentence_transformers import SentenceTransformer
+        _model = SentenceTransformer("all-MiniLM-L6-v2")
+        print("Embedding model loaded.")
+    return _model
 
 def index_chunks(filename: str, chunks: list):
     """
@@ -24,6 +29,7 @@ def index_chunks(filename: str, chunks: list):
         return
         
     print(f"Indexing {len(texts)} chunks for {filename}...")
+    model = get_model()
     embeddings = model.encode(texts)
     
     # Associate embeddings with chunks
@@ -53,6 +59,7 @@ def retrieve_relevant_chunks(filename: str, query: str, top_k: int = 3) -> list:
     if len(stored_chunks) <= top_k:
         return stored_chunks
         
+    model = get_model()
     query_embedding = model.encode([query])[0]
     
     # Compute cosine similarities using numpy

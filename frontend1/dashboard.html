@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Dashboard</title>
+<title>Dashboard | HirableAI</title>
 <link rel="stylesheet" href="style.css">
 </head>
 
@@ -12,19 +12,44 @@
 <button onclick="logout()" class="secondary-btn">Logout</button>
 </nav>
 
-<section class="center-page">
+<section class="center-page" style="padding-top: 100px;">
 
-<div class="card">
-<h2>Dashboard</h2>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h2>Welcome Back! 👋</h2>
+            <p>Your interview readiness overview.</p>
+        </div>
+        
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(45deg, #00BFA6, #38BDF8); -webkit-background-clip: text; color: transparent;">🎤</div>
+                <h3>Questions Answered</h3>
+                <h1 id="dashInterviews">0</h1>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(45deg, #f59e0b, #ef4444); -webkit-background-clip: text; color: transparent;">🎯</div>
+                <h3>Average Score</h3>
+                <h1 id="dashScore">0%</h1>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(45deg, #8b5cf6, #3b82f6); -webkit-background-clip: text; color: transparent;">📄</div>
+                <h3>Active Resume</h3>
+                <p id="dashResume" style="font-weight: 600; font-size: 14px; margin-top: 10px;">None Uploaded</p>
+            </div>
+        </div>
 
-<p>Total Interviews: 5</p>
-<p>Average Score: 82%</p>
+        <div class="recent-activity card" style="width: 100%; margin: 20px 0; text-align: left;">
+            <h3 style="margin-bottom: 15px;">Latest Feedback 💡</h3>
+            <div class="feedback" id="dashFeedback" style="max-height: none;">
+                Complete an interview to see your AI feedback here.
+            </div>
+        </div>
 
-<a href="mock.html">
-<button class="primary-btn">Start New Interview</button>
-</a>
-
-</div>
+        <div class="dashboard-actions" style="display: flex; gap: 20px; justify-content: center; margin-bottom: 40px;">
+            <button class="secondary-btn" onclick="window.location='upload.html'">Upload New Resume</button>
+            <button class="primary-btn" onclick="window.location='mock.html'">Start Mock Interview</button>
+        </div>
+    </div>
 
 </section>
 

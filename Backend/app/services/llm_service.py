@@ -5,23 +5,28 @@ import os
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/generate")
 OLLAMA_TAGS_URL = os.environ.get("OLLAMA_TAGS_URL", "http://localhost:11434/api/tags")
 
-def get_default_model():
-    try:
-        res = requests.get(OLLAMA_TAGS_URL, timeout=5)
-        if res.status_code == 200:
-            models = res.json().get("models", [])
-            if models:
-                return models[0]["name"]
-    except Exception as e:
-        print(f"Error fetching Ollama models: {e}")
-    return "llama3"
+_OLLAMA_MODEL = None
 
-# Automatically selects the first available local model or defaults to llama3
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", get_default_model())
+def get_ollama_model():
+    global _OLLAMA_MODEL
+    if _OLLAMA_MODEL is None:
+        _OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL")
+        if not _OLLAMA_MODEL:
+            try:
+                res = requests.get(OLLAMA_TAGS_URL, timeout=1)
+                if res.status_code == 200:
+                    models = res.json().get("models", [])
+                    if models:
+                        _OLLAMA_MODEL = models[0]["name"]
+            except Exception as e:
+                pass
+            if not _OLLAMA_MODEL:
+                _OLLAMA_MODEL = "llama3"
+    return _OLLAMA_MODEL
 
 def call_ollama(prompt: str) -> str:
     payload = {
-        "model": OLLAMA_MODEL,
+        "model": get_ollama_model(),
         "prompt": prompt,
         "stream": False,
         "format": "json"
@@ -74,23 +79,29 @@ def generate_questions(context: str, num_questions: int = 5):
 
 def evaluate_answer(question: str, answer: str, context: str):
     prompt = f"""
-    You are an AI interviewer evaluating a candidate's answer based on their resume context.
+    You are an expert AI interviewer critically evaluating a candidate's answer.
     
-    Context from resume:
+    Resume Context:
     {context}
     
-    Question: {question}
+    Question Asked: {question}
     Candidate's Answer: {answer}
     
-    Rate the answer out of 100 for three categories: confidence, communication, and technical knowledge.
-    Provide a short, 1-2 sentence feedback string.
-    Return strictly a JSON object, no markdown format blocks. 
+    CRITICAL EVALUATION INSTRUCTIONS:
+    1. Technical Accuracy (0-100): Is the answer factually correct? Does it comprehensively address the question asked? Be absolutely unforgiving. If the answer is vague, generic, irrelevant, or misses the core point, score strictly below 40.
+    2. Communication (0-100): Is the answer well-structured, clear, and easy to understand? Are they explaining terms well?
+    3. Confidence (0-100): Judging from the text, does the candidate sound assertive and authoritative, or hesitant and unsure?
+    4. Feedback: Provide a concise (2-3 sentences), highly specific critique. Point out exactly what was good and what was missing or incorrect based on the question. Do not be overly polite; be direct, constructive, and strict.
+    5. Ideal Answer: Provide a concise ideal answer to the question based on the candidate's context (if applicable) or general best practices.
+    
+    Return STRICTLY a JSON object, do not use markdown format blocks.
     Format required:
     {{
         "confidence": 85,
         "communication": 90,
         "technical": 80,
-        "feedback": "Good response with clear points."
+        "feedback": "Your explanation of React Hooks was solid, but you missed answering the second part of the question regarding state management.",
+        "ideal_answer": "React Hooks allow state and lifecycle features in functional components. For state management across the app, Context API or Redux can be used."
     }}
     """
     
@@ -107,5 +118,6 @@ def evaluate_answer(question: str, answer: str, context: str):
         "confidence": 70,
         "communication": 70,
         "technical": 70,
-        "feedback": "Ollama fallback. Please ensure Ollama is running and accessible."
+        "feedback": "Evaluation failed. Please try again.",
+        "ideal_answer": "N/A"
     }

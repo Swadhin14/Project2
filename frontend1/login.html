@@ -5,8 +5,14 @@
 <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="center-page">
+<body style="position: relative;">
 
+<nav class="navbar" style="position: relative; z-index: 10;">
+<h1 class="logo">Hirable<span>AI</span></h1>
+<button class="secondary-btn" onclick="window.location='index.html'">Back Home</button>
+</nav>
+
+<section class="center-page">
 <div class="card">
 <h2>Welcome Back 👋</h2>
 
@@ -20,6 +26,7 @@
 New user? <button class="secondary-btn" onclick="signup()">Signup</button>
 </p>
 </div>
+</section>
 
 <script src="script.js"></script>
 </body>
